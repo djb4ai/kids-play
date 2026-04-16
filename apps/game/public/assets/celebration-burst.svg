@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title desc">
+  <title id="title">Celebration burst</title>
+  <desc id="desc">A bright star burst with confetti and cheerful colors.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#74F0FF"/>
+      <stop offset="50%" stop-color="#FFE56B"/>
+      <stop offset="100%" stop-color="#FF8DB6"/>
+    </linearGradient>
+    <linearGradient id="star" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF2A1"/>
+      <stop offset="100%" stop-color="#FFB738"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#194865" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+  <rect width="160" height="160" rx="8" fill="url(#bg)"/>
+  <g filter="url(#shadow)">
+    <path d="M80 26 93 56 126 59 101 80 108 113 80 97 52 113 59 80 34 59 67 56Z" fill="url(#star)"/>
+    <path d="M80 40 88 58 108 60 93 73 97 92 80 83 63 92 67 73 52 60 72 58Z" fill="#FF7AA4"/>
+    <circle cx="80" cy="80" r="16" fill="#FFFFFF" opacity="0.28"/>
+  </g>
+  <path d="M80 16v18M80 126v18M18 80h18M124 80h18M34 34l12 12M114 114l12 12M126 34l-12 12M46 114l-12 12" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" opacity="0.54"/>
+  <circle cx="29" cy="48" r="7" fill="#59D96D"/>
+  <circle cx="131" cy="43" r="7" fill="#4A95FF"/>
+  <circle cx="36" cy="123" r="7" fill="#FF7AA4"/>
+  <circle cx="125" cy="121" r="7" fill="#FFE86A"/>
+  <path d="M24 78c8-8 18-13 31-15" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" opacity="0.45"/>
+</svg>

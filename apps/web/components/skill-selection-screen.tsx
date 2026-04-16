@@ -94,31 +94,42 @@ export function SkillSelectionScreen() {
     <main className="page">
       <div className="shell">
         <section className="hero" aria-labelledby="practice-heading">
-          <div>
-            <div className="eyebrow">Sing and play</div>
+          <div className="heroCopy">
+            <div className="eyebrow">Bright play time</div>
             <h1 className="title" id="practice-heading">
               What would you like to practice today?
             </h1>
             <p className="lede">
-              Pick a game and we&apos;ll make it bright, quick, and kind.
+              Pick a game and we&apos;ll keep each round bright, calm, and easy to follow.
             </p>
+            <div className="heroChips" aria-label="Play qualities">
+              <span>Calm wins</span>
+              <span>Friendly pacing</span>
+              <span>Joyful practice</span>
+            </div>
           </div>
-          <div className="heroArt" aria-hidden="true">
+          <div className="heroArt">
             <Image
-              src="/nursery-melon.svg"
-              alt=""
-              width={320}
-              height={240}
+              src="/hero-inclusive-playroom.svg"
+              alt="Three cheerful children playing together with sensory headphones, a wheelchair, and a communication tablet."
+              width={640}
+              height={420}
               priority
             />
           </div>
         </section>
 
+        <div className="supportStrip" aria-label="Practice supports">
+          <span>Calm starts</span>
+          <span>Clear prompts</span>
+          <span>No-rush rounds</span>
+        </div>
+
         <section className="sectionBand" aria-label="Select a practice area">
           <div className="sectionHeading">
             <div>
               <h2>Choose a skill</h2>
-              <p>Each one launches a short game made for quick practice.</p>
+              <p>Each one launches a short game with room for different bodies, brains, and paces.</p>
             </div>
             <Link className="ghostButton parentLinkButton" href="/parent/demo_child/dashboard">
               Parent dashboard
@@ -131,6 +142,7 @@ export function SkillSelectionScreen() {
                 key={skill}
                 type="button"
                 className="skillButton"
+                data-skill={skill}
                 data-testid={`skill-${skill}`}
                 onClick={() => startGame(skill)}
                 disabled={pendingSkill !== null}

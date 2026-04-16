@@ -67,6 +67,9 @@ const IMAGE_PATHS: Record<string, string> = {
   tree: "/assets/tree.svg"
 };
 
+const MASCOT_PATH = "/assets/melon-buddy-glossy.svg";
+const CELEBRATION_PATH = "/assets/celebration-burst.svg";
+
 function getGameIdFromPathname(pathname: string) {
   const segments = pathname.split("/").filter(Boolean);
   if (segments[0] === "game" && segments[1]) {
@@ -515,7 +518,7 @@ function GameStage({ session }: { session: GameSession }) {
       <section className="board">
         <header className="board-top">
           <div className="board-copy">
-            <img className="mascot" src="/assets/melon-buddy.svg" alt="" />
+            <img className="mascot" src={MASCOT_PATH} alt="" />
             <div>
               <p className="eyebrow">
                 {copy.label} | {copy.heading}
@@ -586,7 +589,7 @@ function GameStage({ session }: { session: GameSession }) {
           </section>
         ) : (
           <section className="complete-area" data-testid="game-complete">
-            <img className="celebration" src="/assets/celebration.svg" alt="" />
+            <img className="celebration" src={CELEBRATION_PATH} alt="" />
             <h2>Well done!</h2>
             <p>You finished this round of practice.</p>
             <div className="finish-pill">
@@ -626,7 +629,7 @@ function GamePlayer() {
     return (
       <main className="shell">
         <section className="panel panel-loading">
-          <img className="mascot" src="/assets/melon-buddy.svg" alt="" />
+          <img className="mascot" src={MASCOT_PATH} alt="" />
           <h1>Loading your game</h1>
           <p>Almost ready.</p>
         </section>
@@ -638,7 +641,7 @@ function GamePlayer() {
     return (
       <main className="shell">
         <section className="panel">
-          <img className="mascot" src="/assets/melon-buddy.svg" alt="" />
+          <img className="mascot" src={MASCOT_PATH} alt="" />
           <h1>Let’s try that again</h1>
           <p>{sessionState.message}</p>
           <p className="small">Please go back and choose a skill again.</p>

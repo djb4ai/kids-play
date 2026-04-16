@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type {
@@ -339,20 +340,31 @@ function ParentHeader({
 }) {
   return (
     <header className="parentHeader">
-      <div>
-        <div className="eyebrow">{eyebrow}</div>
-        <h1>{title}</h1>
-        <p>{description}</p>
-      </div>
-      <div className="parentHeaderActions">
-        {childId ? (
-          <Link className="ghostButton parentLinkButton" href={`/parent/${childId}/dashboard`}>
-            Dashboard
+      <div className="parentHeaderIntro">
+        <div>
+          <div className="eyebrow">{eyebrow}</div>
+          <h1>{title}</h1>
+          <p>{description}</p>
+        </div>
+        <div className="parentHeaderActions">
+          {childId ? (
+            <Link className="ghostButton parentLinkButton" href={`/parent/${childId}/dashboard`}>
+              Dashboard
+            </Link>
+          ) : null}
+          <Link className="homeButton" href="/">
+            Play a game
           </Link>
-        ) : null}
-        <Link className="homeButton" href="/">
-          Play a game
-        </Link>
+        </div>
+      </div>
+      <div className="parentHeaderVisual">
+        <Image
+          src="/family-progress-team.svg"
+          alt="A caregiver and child smiling beside a colorful progress board with stars."
+          width={320}
+          height={240}
+          priority
+        />
       </div>
     </header>
   );

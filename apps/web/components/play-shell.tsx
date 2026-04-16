@@ -181,18 +181,20 @@ export function PlayShell({
     <main className="page">
       <div className="playShell">
         <header className="playHeader">
-          <div>
-            <div className="eyebrow">Happy practice</div>
+          <div className="playHeaderCopy">
+            <div className="eyebrow">Kind, clear practice</div>
             <h1>{session.title ?? "Your game is ready"}</h1>
-            <p>{session.instructions ?? "Play a short round and keep going."}</p>
+            <p>{session.instructions ?? "Play a short round with big taps and clear feedback."}</p>
           </div>
-          <Image
-            src="/music-rainbow.svg"
-            alt=""
-            width={168}
-            height={120}
-            aria-hidden="true"
-          />
+          <div className="playHeaderArt">
+            <Image
+              src="/play-stage-parade.svg"
+              alt="Three cheerful friends smiling under stars and music notes."
+              width={320}
+              height={220}
+              priority
+            />
+          </div>
         </header>
 
         <section className="playStatus" aria-live="polite">
