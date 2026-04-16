@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Sun">
+  <rect width="128" height="128" rx="20" fill="#fff9ea"/>
+  <circle cx="64" cy="64" r="24" fill="#ffb703"/>
+  <g stroke="#ffb703" stroke-width="6" stroke-linecap="round">
+    <path d="M64 16v14M64 98v14M16 64h14M98 64h14M30 30l10 10M88 88l10 10M30 98l10-10M88 40l10-10"/>
+  </g>
+</svg>

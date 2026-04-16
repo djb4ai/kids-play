@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Leaf">
+  <rect width="128" height="128" rx="20" fill="#f6fff7"/>
+  <path d="M90 32c-28 0-50 22-50 50 0 7 1 13 4 19 18 0 37-7 50-20 12-12 16-30 10-49-4 0-8 0-14 0z" fill="#5fc27b"/>
+  <path d="M42 90c16-2 31-11 44-26" stroke="#e8fff0" stroke-width="5" stroke-linecap="round"/>
+</svg>

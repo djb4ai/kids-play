@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="Celebration">
+  <rect width="160" height="160" rx="28" fill="#f4fbff"/>
+  <circle cx="80" cy="80" r="34" fill="#ffcf4d"/>
+  <path d="M80 34 88 58l24 2-18 16 5 24-19-12-19 12 5-24-18-16 24-2z" fill="#ff8c42"/>
+  <g fill="#4cb595">
+    <circle cx="28" cy="34" r="5"/>
+    <circle cx="132" cy="44" r="5"/>
+    <circle cx="38" cy="128" r="5"/>
+    <circle cx="124" cy="122" r="5"/>
+  </g>
+</svg>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 260" role="img" aria-labelledby="title desc">
+  <title id="title">Smiling watermelon music friend</title>
+  <desc id="desc">A bright watermelon character with music notes and stars.</desc>
+  <rect width="360" height="260" rx="8" fill="#DFF7FF"/>
+  <path d="M42 191c39-36 82-53 130-51 52 2 101 25 146 68" fill="none" stroke="#5CCB7A" stroke-width="18" stroke-linecap="round"/>
+  <path d="M71 191c30-22 64-33 102-31 39 2 76 18 112 48" fill="none" stroke="#FF6F85" stroke-width="14" stroke-linecap="round"/>
+  <path d="M106 190c21-10 43-15 68-14 25 1 51 9 76 25" fill="none" stroke="#FFE066" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="177" cy="119" r="66" fill="#67D77E"/>
+  <path d="M113 119a66 66 0 0 0 132 0Z" fill="#FF6F85"/>
+  <path d="M128 119a51 51 0 0 0 98 0Z" fill="#FF8FA0"/>
+  <circle cx="153" cy="104" r="7" fill="#20342D"/>
+  <circle cx="201" cy="104" r="7" fill="#20342D"/>
+  <path d="M155 132c12 12 31 12 44 0" fill="none" stroke="#20342D" stroke-width="7" stroke-linecap="round"/>
+  <path d="M177 54 187 75 210 78 193 94 197 117 177 106 157 117 161 94 144 78 167 75Z" fill="#FFE066"/>
+  <circle cx="268" cy="61" r="16" fill="#FFBE3D"/>
+  <circle cx="306" cy="88" r="12" fill="#4AA8FF"/>
+  <circle cx="61" cy="68" r="13" fill="#FF6F85"/>
+  <circle cx="75" cy="105" r="9" fill="#27B8A8"/>
+  <path d="M286 137v-55h13v44c8-2 17 1 20 8 4 9-3 19-15 23-11 3-21 0-23-8-2-6 0-10 5-12Z" fill="#20342D"/>
+  <path d="M74 154v-48h12v38c7-2 15 1 18 7 4 8-2 17-13 20-10 3-18 0-21-7-2-5 0-8 4-10Z" fill="#20342D"/>
+</svg>

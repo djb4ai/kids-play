@@ -1,0 +1,26 @@
+{
+  "name": "kids-play",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n web,game -c green,cyan \"npm run dev:web\" \"npm run dev:game\"",
+    "dev:web": "npm --workspace @kids-play/web run dev",
+    "dev:game": "npm --workspace @kids-play/game run dev",
+    "build": "npm --workspace @kids-play/shared run build && npm --workspace @kids-play/web run build && npm --workspace @kids-play/game run build",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "typecheck": "npm --workspace @kids-play/shared run build && npm --workspace @kids-play/web run typecheck && npm --workspace @kids-play/game run typecheck"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.51.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0",
+    "vitest": "^3.0.5"
+  }
+}
