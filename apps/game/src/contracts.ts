@@ -2,6 +2,7 @@ import type {
   FeedbackSet,
   GameItem,
   GameRound,
+  GameplayEvent,
   GameRuntimeEvent,
   GameSession,
   TemplateType
@@ -12,6 +13,7 @@ export type {
   FeedbackSet,
   GameItem,
   GameRound,
+  GameplayEvent,
   GameRuntimeEvent,
   GameSession,
   TemplateType
@@ -29,6 +31,10 @@ function isString(value: unknown): value is string {
 
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(isString);
+}
+
+function isDifficultyLevel(value: unknown) {
+  return value === 1 || value === 2 || value === 3;
 }
 
 function isGameItem(value: unknown): value is GameItem {
@@ -85,8 +91,9 @@ export function isGameSession(value: unknown): value is GameSession {
     Array.isArray(value.rounds) &&
     value.rounds.every(isGameRound) &&
     isFeedbackSet(value.feedback) &&
+    isString(value.childId) &&
     value.ageGroup === "5-8" &&
-    value.difficulty === "beginner" &&
+    isDifficultyLevel(value.difficultyLevel) &&
     isString(value.runtimeUrl) &&
     value.launchMode === "embed" &&
     isString(value.createdAt)

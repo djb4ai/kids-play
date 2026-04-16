@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { isGameSession, type GameItem, type GameRound, type GameRuntimeEvent, type GameSession, type TemplateType } from "./contracts";
+import { isGameSession, type GameItem, type GameRound, type GameplayEvent, type GameRuntimeEvent, type GameSession, type TemplateType } from "./contracts";
 
 const PLATFORM_ORIGIN =
   import.meta.env.VITE_PLATFORM_ORIGIN ?? "http://127.0.0.1:3000";
@@ -76,9 +76,30 @@ function postRuntimeEvent(event: GameRuntimeEvent) {
   }
 }
 
+function postGameplayEvent(
+  gameId: string,
+  event: Omit<GameplayEvent, "timestamp">
+) {
+  postRuntimeEvent({
+    type: "kids-play:game-event",
+    gameId,
+    event: {
+      ...event,
+      timestamp: new Date().toISOString()
+    }
+  });
+}
+
 function goHome(gameId: string) {
   if (window.parent !== window) {
     postRuntimeEvent({ type: "kids-play:go-home", gameId });
+    window.setTimeout(() => {
+      try {
+        window.open(PLATFORM_ORIGIN, "_top");
+      } catch {
+        window.location.href = PLATFORM_ORIGIN;
+      }
+    }, 120);
     return;
   }
 
@@ -119,6 +140,7 @@ function useSession(gameId: string) {
     loadSession(gameId, controller.signal)
       .then((session) => {
         setState({ status: "ready", session });
+        postGameplayEvent(gameId, { eventType: "game_started" });
         postRuntimeEvent({ type: "kids-play:game-started", gameId });
       })
       .catch((error: unknown) => {
@@ -152,6 +174,7 @@ function useRoundFlow(session: GameSession) {
   );
   const [lockedChoice, setLockedChoice] = useState<string | null>(null);
   const completedRef = useRef(false);
+  const roundStartedAtRef = useRef(performance.now());
 
   const round = session.rounds[roundIndex];
   const total = session.rounds.length;
@@ -166,7 +189,32 @@ function useRoundFlow(session: GameSession) {
     setStatusMessage(session.feedback.correct[0] ?? "Great job!");
     setLockedChoice(null);
     completedRef.current = false;
+    roundStartedAtRef.current = performance.now();
   }, [session]);
+
+  useEffect(() => {
+    if (!round || phase === "complete") {
+      return;
+    }
+
+    roundStartedAtRef.current = performance.now();
+    postGameplayEvent(session.gameId, {
+      eventType: "round_started",
+      roundIndex,
+      questionOrItem: round.id,
+      metadata: {
+        templateType: session.templateType
+      }
+    });
+    postGameplayEvent(session.gameId, {
+      eventType: "prompt_shown",
+      roundIndex,
+      questionOrItem: round.id,
+      metadata: {
+        prompt: round.prompt
+      }
+    });
+  }, [phase, round, roundIndex, session.gameId, session.templateType]);
 
   useEffect(() => {
     if (!round || !isMemoryTemplate(session.templateType) || phase !== "watch") {
@@ -202,6 +250,40 @@ function useRoundFlow(session: GameSession) {
     };
   }, [phase, round, session.feedback.correct, session.templateType]);
 
+  function getResponseTimeMs() {
+    return Math.max(0, Math.round(performance.now() - roundStartedAtRef.current));
+  }
+
+  function postAnswerEvents(
+    itemId: string,
+    isCorrect: boolean,
+    correctAnswer?: string
+  ) {
+    if (!round) {
+      return;
+    }
+
+    const responseTimeMs = getResponseTimeMs();
+    postGameplayEvent(session.gameId, {
+      eventType: "answer_submitted",
+      roundIndex,
+      questionOrItem: round.id,
+      selectedAnswer: itemId,
+      correctAnswer,
+      isCorrect,
+      responseTimeMs
+    });
+    postGameplayEvent(session.gameId, {
+      eventType: isCorrect ? "answer_correct" : "answer_incorrect",
+      roundIndex,
+      questionOrItem: round.id,
+      selectedAnswer: itemId,
+      correctAnswer,
+      isCorrect,
+      responseTimeMs
+    });
+  }
+
   function finishGame(finalScore: number) {
     if (completedRef.current) {
       return;
@@ -211,6 +293,13 @@ function useRoundFlow(session: GameSession) {
     setPhase("complete");
     const completionMessage = session.feedback.complete[0] ?? "You did it!";
     setStatusMessage(completionMessage);
+    postGameplayEvent(session.gameId, {
+      eventType: "game_completed",
+      metadata: {
+        correct: finalScore,
+        total
+      }
+    });
     postRuntimeEvent({
       type: "kids-play:feedback",
       gameId: session.gameId,
@@ -224,6 +313,18 @@ function useRoundFlow(session: GameSession) {
   }
 
   function advanceRound(nextScore: number) {
+    if (round) {
+      postGameplayEvent(session.gameId, {
+        eventType: "round_completed",
+        roundIndex,
+        questionOrItem: round.id,
+        metadata: {
+          score: nextScore,
+          total
+        }
+      });
+    }
+
     const nextRoundIndex = roundIndex + 1;
     if (nextRoundIndex >= total) {
       finishGame(nextScore);
@@ -248,6 +349,7 @@ function useRoundFlow(session: GameSession) {
       }
 
       const expected = round.correctSequence?.[sequenceCursor];
+      postAnswerEvents(itemId, expected === itemId, expected);
       if (expected === itemId) {
         const nextCursor = sequenceCursor + 1;
         const nextScore = sequenceCursor + 1 >= (round.correctSequence?.length ?? 0)
@@ -285,6 +387,7 @@ function useRoundFlow(session: GameSession) {
       return;
     }
 
+    postAnswerEvents(itemId, round.correctChoice === itemId, round.correctChoice);
     if (round.correctChoice === itemId) {
       const nextScore = score + 1;
       const message = session.feedback.correct[0] ?? "Great job!";

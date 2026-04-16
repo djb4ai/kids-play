@@ -2,6 +2,7 @@ import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import readline from "node:readline";
 import {
   codexOutputJsonSchema,
+  type AdaptiveGenerationContext,
   type GenerateGameRequest
 } from "@kids-play/shared";
 import { GameGenerationError } from "./errors";
@@ -48,7 +49,10 @@ class CodexAppServerClient implements GameGenerationClient {
 
   constructor(private readonly options: CodexClientOptions) {}
 
-  async generateGameConfig(input: GenerateGameRequest): Promise<unknown> {
+  async generateGameConfig(
+    input: GenerateGameRequest,
+    context: AdaptiveGenerationContext
+  ): Promise<unknown> {
     await this.ensureInitialized();
 
     const thread = await this.request<{ thread: { id: string } }>(
@@ -75,7 +79,7 @@ class CodexAppServerClient implements GameGenerationClient {
         input: [
           {
             type: "text",
-            text: buildPrompt(input, this.options.templateCatalog),
+            text: buildPrompt(input, context, this.options.templateCatalog),
             text_elements: []
           }
         ],
@@ -290,11 +294,16 @@ function turnKey(threadId: string, turnId: string) {
   return `${threadId}:${turnId}`;
 }
 
-function buildPrompt(input: GenerateGameRequest, templateCatalog: unknown) {
+function buildPrompt(
+  input: GenerateGameRequest,
+  context: AdaptiveGenerationContext,
+  templateCatalog: unknown
+) {
   return [
-    "Generate one short child-safe game config for this request.",
+    "Generate one short child-safe adaptive game config for this request.",
     "",
     `Request: ${JSON.stringify(input)}`,
+    `Adaptive context: ${JSON.stringify(context)}`,
     `Template catalog: ${JSON.stringify(templateCatalog)}`,
     "",
     "Rules:",
@@ -302,6 +311,9 @@ function buildPrompt(input: GenerateGameRequest, templateCatalog: unknown) {
     "- Choose one template whose skill matches the selected skill.",
     "- Use only item ids and image keys from the matching template.",
     "- Keep the session to 3 short rounds.",
+    "- Keep each round small: use no more than 3 choices for reading or attention and no more than 4 choices for memory.",
+    "- Use the adaptive context to repeat weak items, reduce distractors, or gently raise difficulty.",
+    "- Keep changes small and encouraging. Do not make the child feel punished.",
     "- Feedback must be short, affirmative, and non-punitive.",
     "- Include every schema field. Use an empty string for item.value or round.correctChoice when it does not apply.",
     "- Use an empty array for round.sequence and round.correctSequence when they do not apply.",

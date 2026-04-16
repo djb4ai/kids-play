@@ -1,12 +1,15 @@
 import { z } from "zod";
 import {
   AGE_GROUPS,
-  DIFFICULTIES,
+  DIFFICULTY_LEVELS,
+  GAMEPLAY_EVENT_TYPES,
   IMAGE_KEYS,
   SKILLS,
   TEMPLATE_TYPES,
   type CodexGameOutput,
+  type DifficultyLevel,
   type GenerateGameRequest,
+  type SaveSessionRequest,
   type Skill,
   type TemplateType
 } from "./types";
@@ -29,6 +32,12 @@ const idSchema = z
   .string()
   .regex(/^[a-z][a-z0-9_-]{1,31}$/, "Use a short lowercase id.");
 
+export const difficultyLevelSchema = z.union([
+  z.literal(DIFFICULTY_LEVELS[0]),
+  z.literal(DIFFICULTY_LEVELS[1]),
+  z.literal(DIFFICULTY_LEVELS[2])
+]);
+
 const feedbackLineSchema = z
   .string()
   .trim()
@@ -44,9 +53,10 @@ const feedbackLineSchema = z
 
 export const generateGameRequestSchema = z
   .object({
+    childId: idSchema.default("demo_child"),
     skill: z.enum(SKILLS),
-    ageGroup: z.enum(AGE_GROUPS),
-    difficulty: z.enum(DIFFICULTIES)
+    ageGroup: z.enum(AGE_GROUPS).default("5-8"),
+    difficultyLevel: difficultyLevelSchema.default(1)
   })
   .strict();
 
@@ -163,13 +173,51 @@ export const codexGameOutputSchema =
 export const gameSessionSchema = codexGameOutputBaseSchema
   .extend({
     gameId: idSchema,
+    childId: idSchema,
     ageGroup: z.enum(AGE_GROUPS),
-    difficulty: z.enum(DIFFICULTIES),
+    difficultyLevel: difficultyLevelSchema,
     runtimeUrl: z.string().url(),
     launchMode: z.literal("embed"),
     createdAt: z.string().datetime()
   })
   .superRefine(checkGameOutput);
+
+export const gameplayEventSchema = z
+  .object({
+    eventType: z.enum(GAMEPLAY_EVENT_TYPES),
+    roundIndex: z.number().int().nonnegative().optional(),
+    questionOrItem: z.string().trim().min(1).max(64).optional(),
+    selectedAnswer: z.string().trim().min(1).max(64).optional(),
+    correctAnswer: z.string().trim().min(1).max(64).optional(),
+    isCorrect: z.boolean().optional(),
+    responseTimeMs: z.number().int().nonnegative().max(120_000).optional(),
+    metadata: z.record(z.unknown()).optional(),
+    timestamp: z.string().datetime()
+  })
+  .strict();
+
+export const saveSessionRequestSchema = z
+  .object({
+    gameId: idSchema,
+    childId: idSchema,
+    startedAt: z.string().datetime(),
+    endedAt: z.string().datetime(),
+    summary: z
+      .object({
+        correct: z.number().int().nonnegative(),
+        total: z.number().int().positive()
+      })
+      .strict(),
+    events: z.array(gameplayEventSchema).min(1).max(200)
+  })
+  .strict()
+  .refine(
+    (value) => Date.parse(value.endedAt) >= Date.parse(value.startedAt),
+    {
+      path: ["endedAt"],
+      message: "Session end must be after the start."
+    }
+  );
 
 export const codexOutputJsonSchema = {
   type: "object",
@@ -260,6 +308,14 @@ export const codexOutputJsonSchema = {
 
 export function parseGenerateGameRequest(input: unknown): GenerateGameRequest {
   return generateGameRequestSchema.parse(input);
+}
+
+export function parseDifficultyLevel(input: unknown): DifficultyLevel {
+  return difficultyLevelSchema.parse(input);
+}
+
+export function parseSaveSessionRequest(input: unknown): SaveSessionRequest {
+  return saveSessionRequestSchema.parse(input);
 }
 
 export function parseCodexGameOutput(input: unknown): CodexGameOutput {

@@ -3,9 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { GameplayEvent } from "@kids-play/shared";
 
 type GameSessionSummary = {
+  childId?: string;
   title?: string;
   instructions?: string;
 };
@@ -13,6 +15,7 @@ type GameSessionSummary = {
 type RuntimeEvent =
   | { type: "kids-play:game-started"; gameId: string }
   | { type: "kids-play:feedback"; gameId: string; message: string }
+  | { type: "kids-play:game-event"; gameId: string; event: GameplayEvent }
   | { type: "kids-play:complete"; gameId: string; summary?: { correct: number; total: number } }
   | { type: "kids-play:go-home"; gameId: string };
 
@@ -37,6 +40,9 @@ export function PlayShell({
   const [message, setMessage] = useState("Getting ready");
   const [completed, setCompleted] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
+  const eventsRef = useRef<GameplayEvent[]>([]);
+  const sessionStartedAtRef = useRef<string | null>(null);
+  const saveStartedRef = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -80,8 +86,17 @@ export function PlayShell({
       }
 
       if (data.type === "kids-play:game-started") {
+        sessionStartedAtRef.current ??= new Date().toISOString();
         setGameStarted(true);
         setMessage("Great start!");
+        return;
+      }
+
+      if (data.type === "kids-play:game-event") {
+        eventsRef.current = [...eventsRef.current, data.event];
+        if (data.event.eventType === "game_started") {
+          sessionStartedAtRef.current = data.event.timestamp;
+        }
         return;
       }
 
@@ -97,6 +112,7 @@ export function PlayShell({
             ? `Well done! ${data.summary.correct}/${data.summary.total}`
             : "Well done!"
         );
+        void saveCompletedSession(data.summary ?? { correct: 0, total: 1 });
         return;
       }
 
@@ -107,7 +123,45 @@ export function PlayShell({
 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [gameId, router, runtimeOrigin]);
+  }, [gameId, router, runtimeOrigin, session.childId]);
+
+  useEffect(() => {
+    eventsRef.current = [];
+    sessionStartedAtRef.current = null;
+    saveStartedRef.current = false;
+  }, [gameId]);
+
+  async function saveCompletedSession(summary: { correct: number; total: number }) {
+    if (saveStartedRef.current) {
+      return;
+    }
+
+    saveStartedRef.current = true;
+    const endedAt = new Date().toISOString();
+    const events =
+      eventsRef.current.length > 0
+        ? eventsRef.current
+        : [{ eventType: "game_completed" as const, timestamp: endedAt }];
+
+    try {
+      await fetch("/api/session/save", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({
+          gameId,
+          childId: session.childId ?? "demo_child",
+          startedAt: sessionStartedAtRef.current ?? events[0]?.timestamp ?? endedAt,
+          endedAt,
+          summary,
+          events
+        })
+      });
+    } catch (error) {
+      console.error("[kids-play] session save request failed", error);
+    }
+  }
 
   return (
     <main className="page">
@@ -141,9 +195,14 @@ export function PlayShell({
           <section className="loadingCard" data-testid="play-complete" aria-live="polite">
             <strong>Nice work.</strong>
             <span>You finished the round.</span>
-            <Link className="homeButton" href="/" data-testid="home-link">
-              Choose another skill
-            </Link>
+            <div className="completionActions">
+              <Link className="homeButton" href="/" data-testid="home-link">
+                Choose another skill
+              </Link>
+              <Link className="ghostButton parentLinkButton" href="/parent/demo_child/dashboard">
+                See progress
+              </Link>
+            </div>
           </section>
         ) : null}
 

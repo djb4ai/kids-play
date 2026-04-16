@@ -6,6 +6,7 @@ import {
   getTemplateCatalogForPrompt,
   parseCodexGameOutput,
   parseGenerateGameRequest,
+  type AdaptiveGenerationContext,
   type CodexGameOutput,
   type GameSession,
   type GenerateGameRequest,
@@ -15,7 +16,10 @@ import { getCodexAppServerClient } from "./codex-app-server";
 import { GameGenerationError } from "./errors";
 
 export type GameGenerationClient = {
-  generateGameConfig(input: GenerateGameRequest): Promise<unknown>;
+  generateGameConfig(
+    input: GenerateGameRequest,
+    context: AdaptiveGenerationContext
+  ): Promise<unknown>;
 };
 
 export type LaunchMetadata = Pick<
@@ -26,14 +30,17 @@ export type LaunchMetadata = Pick<
 export async function createGeneratedGameSession(
   rawInput: unknown,
   options: {
+    adaptiveContext?: AdaptiveGenerationContext;
     client?: GameGenerationClient;
     now?: Date;
     runtimeOrigin?: string;
   } = {}
 ): Promise<GameSession> {
   const input = parseGenerateGameRequest(rawInput);
+  const adaptiveContext =
+    options.adaptiveContext ?? createNewAdaptiveContext(input);
   const client = options.client ?? getDefaultGenerationClient(input);
-  const rawOutput = await client.generateGameConfig(input);
+  const rawOutput = await client.generateGameConfig(input, adaptiveContext);
   const output = parseCodexGameOutput(rawOutput);
 
   if (output.skill !== input.skill) {
@@ -67,8 +74,8 @@ export function shouldUseMockGeneration(
 function getDefaultGenerationClient(input: GenerateGameRequest): GameGenerationClient {
   if (shouldUseMockGeneration(input.skill)) {
     return {
-      async generateGameConfig(input) {
-        return createMockCodexOutput(input.skill);
+      async generateGameConfig(input, context) {
+        return createMockCodexOutput(input.skill, context);
       }
     };
   }
@@ -112,10 +119,24 @@ function buildTrustedSession(
   return gameSessionSchema.parse({
     ...output,
     gameId,
+    childId: input.childId,
     ageGroup: input.ageGroup,
-    difficulty: input.difficulty,
+    difficultyLevel: input.difficultyLevel,
     runtimeUrl,
     launchMode: "embed",
     createdAt: (options.now ?? new Date()).toISOString()
   });
+}
+
+function createNewAdaptiveContext(
+  input: GenerateGameRequest
+): AdaptiveGenerationContext {
+  return {
+    childId: input.childId,
+    skill: input.skill,
+    targetDifficultyLevel: input.difficultyLevel,
+    recentTrend: "new",
+    lastSession: null,
+    recommendation: null
+  };
 }

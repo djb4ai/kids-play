@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
+import { parseGenerateGameRequest } from "@kids-play/shared";
 import { createGeneratedGameSession, toLaunchMetadata } from "@/lib/generation";
+import { getLearningStore } from "@/lib/learning-store";
 import { saveGameSession } from "@/lib/session-store";
 
 export const runtime = "nodejs";
@@ -21,7 +23,19 @@ export async function POST(request: Request) {
   }
 
   try {
-    const session = await createGeneratedGameSession(body);
+    const generationRequest = parseGenerateGameRequest(body);
+    const store = getLearningStore();
+    const adaptiveContext = store.getAdaptiveContext(
+      generationRequest.childId,
+      generationRequest.skill
+    );
+    const session = await createGeneratedGameSession(
+      {
+        ...generationRequest,
+        difficultyLevel: adaptiveContext.targetDifficultyLevel
+      },
+      { adaptiveContext }
+    );
     saveGameSession(session);
 
     return NextResponse.json(toLaunchMetadata(session), { status: 201 });

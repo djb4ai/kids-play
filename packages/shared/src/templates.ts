@@ -1,5 +1,6 @@
 import {
   type CodexGameOutput,
+  type AdaptiveGenerationContext,
   type GameRound,
   type Skill,
   type TemplateDefinition,
@@ -235,9 +236,12 @@ export function getTemplateForSkill(skill: Skill): TemplateDefinition {
   return TEMPLATE_CATALOG[TEMPLATE_TYPES_BY_SKILL[skill][0]];
 }
 
-export function createMockCodexOutput(skill: Skill): CodexGameOutput {
+export function createMockCodexOutput(
+  skill: Skill,
+  context?: AdaptiveGenerationContext
+): CodexGameOutput {
   const template = getTemplateForSkill(skill);
-  return {
+  const output: CodexGameOutput = {
     skill,
     templateType: template.templateType,
     title: template.title,
@@ -250,6 +254,20 @@ export function createMockCodexOutput(skill: Skill): CodexGameOutput {
       complete: [...sharedFeedback.complete]
     }
   };
+
+  if (!context || context.recentTrend === "new") {
+    return output;
+  }
+
+  if (skill === "reading") {
+    return adaptReadingOutput(output, context);
+  }
+
+  if (skill === "memory") {
+    return adaptMemoryOutput(output, context);
+  }
+
+  return adaptAttentionOutput(output, context);
 }
 
 export function getTemplateCatalogForPrompt() {
@@ -263,4 +281,151 @@ export function getTemplateCatalogForPrompt() {
     sampleItems: template.items,
     sampleRounds: template.rounds
   }));
+}
+
+function adaptReadingOutput(
+  output: CodexGameOutput,
+  context: AdaptiveGenerationContext
+): CodexGameOutput {
+  const focusIds = getFocusItemIds(output, context);
+  const targets = fillTargets(focusIds, getRoundTargets(output));
+  const choiceCount = context.targetDifficultyLevel <= 1 ? 2 : 3;
+
+  return {
+    ...output,
+    title:
+      context.recentTrend === "needs_support"
+        ? "Reading Gentle Repeat"
+        : "Reading Next Step",
+    instructions:
+      context.recentTrend === "needs_support"
+        ? "Try the familiar words again."
+        : "Read each clue and tap the match.",
+    rounds: targets.slice(0, 3).map((targetId, index) => {
+      const target = output.items.find((item) => item.id === targetId);
+      return {
+        id: `adapt_read_${index + 1}`,
+        prompt: target?.value
+          ? `Tap the picture for ${target.label}.`
+          : `Tap ${target?.label ?? targetId}.`,
+        choices: buildChoices(output, targetId, choiceCount),
+        correctChoice: targetId
+      };
+    })
+  };
+}
+
+function adaptMemoryOutput(
+  output: CodexGameOutput,
+  context: AdaptiveGenerationContext
+): CodexGameOutput {
+  const sequenceLength = context.targetDifficultyLevel <= 1 ? 2 : 3;
+  const ids = output.items.map((item) => item.id);
+
+  return {
+    ...output,
+    title:
+      context.recentTrend === "ready_for_more"
+        ? "Memory Next Step"
+        : "Memory Gentle Repeat",
+    instructions:
+      context.recentTrend === "ready_for_more"
+        ? "Watch the row and try one more step."
+        : "Watch a short row, then tap it back.",
+    rounds: [0, 1, 2].map((offset) => {
+      const sequence = rotate(ids, offset).slice(0, sequenceLength);
+      return {
+        id: `adapt_memory_${offset + 1}`,
+        prompt: "Remember this order.",
+        choices: rotate(ids, offset).slice(0, Math.max(sequenceLength + 1, 3)),
+        sequence,
+        correctSequence: [...sequence]
+      };
+    })
+  };
+}
+
+function adaptAttentionOutput(
+  output: CodexGameOutput,
+  context: AdaptiveGenerationContext
+): CodexGameOutput {
+  const choiceCount = context.targetDifficultyLevel <= 1 ? 2 : 3;
+  const targets = getRoundTargets(output);
+
+  return {
+    ...output,
+    title:
+      context.recentTrend === "ready_for_more"
+        ? "Focus Next Step"
+        : "Focus Gentle Repeat",
+    instructions:
+      context.recentTrend === "ready_for_more"
+        ? "Find the target with one new distractor."
+        : "Find the target with fewer choices.",
+    rounds: targets.slice(0, 3).map((targetId, index) => {
+      const target = output.items.find((item) => item.id === targetId);
+      return {
+        id: `adapt_focus_${index + 1}`,
+        prompt: `Tap the ${target?.label.toLowerCase() ?? targetId}.`,
+        choices: buildChoices(output, targetId, choiceCount),
+        correctChoice: targetId
+      };
+    })
+  };
+}
+
+function getFocusItemIds(
+  output: CodexGameOutput,
+  context: AdaptiveGenerationContext
+) {
+  const itemIds = new Set(output.items.map((item) => item.id));
+  const normalizedLabels = new Map(
+    output.items.map((item) => [item.label.toLowerCase(), item.id])
+  );
+  const mistakes = context.lastSession?.commonMistakes ?? [];
+
+  return mistakes
+    .map((mistake) => {
+      const normalized = mistake.toLowerCase();
+      return itemIds.has(normalized)
+        ? normalized
+        : normalizedLabels.get(normalized) ?? null;
+    })
+    .filter((itemId): itemId is string => Boolean(itemId));
+}
+
+function getRoundTargets(output: CodexGameOutput) {
+  const targets = output.rounds
+    .map((round) => round.correctChoice)
+    .filter((target): target is string => Boolean(target));
+
+  return targets.length > 0
+    ? targets
+    : output.items.slice(0, 3).map((item) => item.id);
+}
+
+function buildChoices(
+  output: CodexGameOutput,
+  targetId: string,
+  count: number
+) {
+  const others = output.items
+    .map((item) => item.id)
+    .filter((itemId) => itemId !== targetId);
+
+  return [targetId, ...others].slice(0, count);
+}
+
+function fillTargets(primary: string[], fallback: string[]) {
+  const targets = [...new Set([...primary, ...fallback])];
+
+  while (targets.length < 3 && fallback.length > 0) {
+    targets.push(fallback[targets.length % fallback.length]);
+  }
+
+  return targets.slice(0, 3);
+}
+
+function rotate<T>(values: T[], offset: number) {
+  return [...values.slice(offset), ...values.slice(0, offset)];
 }

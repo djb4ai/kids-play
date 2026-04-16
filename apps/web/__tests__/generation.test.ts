@@ -12,9 +12,10 @@ import {
 import type { GameGenerationClient } from "../lib/generation";
 
 const request = (skill: Skill) => ({
+  childId: "demo_child",
   skill,
   ageGroup: "5-8" as const,
-  difficulty: "beginner" as const
+  difficultyLevel: 1 as const
 });
 
 const fixedNow = new Date("2026-04-16T06:30:00.000Z");
@@ -72,6 +73,8 @@ describe("createGeneratedGameSession", () => {
       });
 
       expect(session.skill).toBe(skill);
+      expect(session.childId).toBe("demo_child");
+      expect(session.difficultyLevel).toBe(1);
       expect(session.gameId).toMatch(new RegExp(`^game_${skill}_[a-f0-9]{8}$`));
       expect(session.runtimeUrl).toBe(
         `http://127.0.0.1:3001/game/${session.gameId}`
@@ -84,7 +87,12 @@ describe("createGeneratedGameSession", () => {
   it("rejects invalid skill input", async () => {
     await expect(
       createGeneratedGameSession(
-        { skill: "math", ageGroup: "5-8", difficulty: "beginner" },
+        {
+          childId: "demo_child",
+          skill: "math",
+          ageGroup: "5-8",
+          difficultyLevel: 1
+        },
         { client: clientReturning(createMockCodexOutput("reading")) }
       )
     ).rejects.toThrow();

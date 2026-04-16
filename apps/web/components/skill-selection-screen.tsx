@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
@@ -50,9 +51,10 @@ export function SkillSelectionScreen() {
         window.setTimeout(resolve, 450);
       });
       const request = {
+        childId: "demo_child",
         skill,
         ageGroup: "5-8",
-        difficulty: "beginner"
+        difficultyLevel: 1
       };
 
       const responsePromise = fetch("/api/games/generate", {
@@ -118,6 +120,9 @@ export function SkillSelectionScreen() {
               <h2>Choose a skill</h2>
               <p>Each one launches a short game made for quick practice.</p>
             </div>
+            <Link className="ghostButton parentLinkButton" href="/parent/demo_child/dashboard">
+              Parent dashboard
+            </Link>
           </div>
 
           <div className="skillGrid">
