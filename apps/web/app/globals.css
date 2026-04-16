@@ -241,6 +241,11 @@ button {
   color: #a03a1f;
 }
 
+.statusPill.info {
+  background: #dff7ff;
+  color: #1b556c;
+}
+
 .playShell {
   width: min(100%, 1180px);
   margin: 0 auto;

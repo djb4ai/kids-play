@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { ZodError } from "zod";
 import {
   SKILLS,
   createMockCodexOutput,
@@ -9,6 +10,7 @@ import {
   type AdaptiveGenerationContext,
   type CodexGameOutput,
   type GameSession,
+  type GameGenerationSource,
   type GenerateGameRequest,
   type Skill
 } from "@kids-play/shared";
@@ -24,7 +26,13 @@ export type GameGenerationClient = {
 
 export type LaunchMetadata = Pick<
   GameSession,
-  "gameId" | "templateType" | "runtimeUrl" | "launchMode" | "title" | "instructions"
+  | "gameId"
+  | "templateType"
+  | "runtimeUrl"
+  | "launchMode"
+  | "title"
+  | "instructions"
+  | "generationSource"
 >;
 
 export async function createGeneratedGameSession(
@@ -32,6 +40,7 @@ export async function createGeneratedGameSession(
   options: {
     adaptiveContext?: AdaptiveGenerationContext;
     client?: GameGenerationClient;
+    generationSource?: GameGenerationSource;
     now?: Date;
     runtimeOrigin?: string;
   } = {}
@@ -39,18 +48,44 @@ export async function createGeneratedGameSession(
   const input = parseGenerateGameRequest(rawInput);
   const adaptiveContext =
     options.adaptiveContext ?? createNewAdaptiveContext(input);
+  const generationSource =
+    options.generationSource ??
+    (shouldUseMockGeneration(input.skill) ? "mock" : "codex_app_server");
   const client = options.client ?? getDefaultGenerationClient(input);
-  const rawOutput = await client.generateGameConfig(input, adaptiveContext);
-  const output = parseCodexGameOutput(rawOutput);
+  const maxAttempts = generationSource === "codex_app_server" ? 2 : 1;
+  let lastError: unknown;
 
-  if (output.skill !== input.skill) {
-    throw new GameGenerationError("Generated skill did not match request.");
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const rawOutput = await client.generateGameConfig(input, adaptiveContext);
+      const output = parseCodexGameOutput(rawOutput);
+
+      if (output.skill !== input.skill) {
+        throw new GameGenerationError("Generated skill did not match request.");
+      }
+
+      return buildTrustedSession(input, output, {
+        generationSource,
+        now: options.now,
+        runtimeOrigin: options.runtimeOrigin
+      });
+    } catch (error) {
+      lastError = error;
+
+      if (!shouldRetryGeneration(error, attempt, maxAttempts)) {
+        throw error;
+      }
+
+      console.warn(
+        `[kids-play] generation attempt ${attempt} failed validation; retrying once`,
+        error instanceof ZodError ? error.flatten() : error
+      );
+    }
   }
 
-  return buildTrustedSession(input, output, {
-    now: options.now,
-    runtimeOrigin: options.runtimeOrigin
-  });
+  throw lastError instanceof Error
+    ? lastError
+    : new GameGenerationError("Game generation failed.");
 }
 
 export function toLaunchMetadata(session: GameSession): LaunchMetadata {
@@ -60,7 +95,8 @@ export function toLaunchMetadata(session: GameSession): LaunchMetadata {
     runtimeUrl: session.runtimeUrl,
     launchMode: session.launchMode,
     title: session.title,
-    instructions: session.instructions
+    instructions: session.instructions,
+    generationSource: session.generationSource
   };
 }
 
@@ -108,7 +144,11 @@ function getLiveCodexSkills(env: Record<string, string | undefined>) {
 function buildTrustedSession(
   input: GenerateGameRequest,
   output: CodexGameOutput,
-  options: { now?: Date; runtimeOrigin?: string }
+  options: {
+    generationSource: GameGenerationSource;
+    now?: Date;
+    runtimeOrigin?: string;
+  }
 ) {
   const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
   const gameId = `game_${input.skill}_${suffix}`;
@@ -122,6 +162,7 @@ function buildTrustedSession(
     childId: input.childId,
     ageGroup: input.ageGroup,
     difficultyLevel: input.difficultyLevel,
+    generationSource: options.generationSource,
     runtimeUrl,
     launchMode: "embed",
     createdAt: (options.now ?? new Date()).toISOString()
@@ -139,4 +180,12 @@ function createNewAdaptiveContext(
     lastSession: null,
     recommendation: null
   };
+}
+
+function shouldRetryGeneration(
+  error: unknown,
+  attempt: number,
+  maxAttempts: number
+) {
+  return attempt < maxAttempts && error instanceof ZodError;
 }

@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   AGE_GROUPS,
   DIFFICULTY_LEVELS,
+  GENERATION_SOURCES,
   GAMEPLAY_EVENT_TYPES,
   IMAGE_KEYS,
   SKILLS,
@@ -20,7 +21,8 @@ export const templateSkillMap: Record<TemplateType, Skill> = {
   memory_sequence: "memory",
   memory_shape_path: "memory",
   attention_target_tap: "attention",
-  attention_shape_scan: "attention"
+  attention_shape_scan: "attention",
+  attention_codex_surprise: "attention"
 };
 
 const memoryTemplateTypes = new Set<TemplateType>([
@@ -176,6 +178,7 @@ export const gameSessionSchema = codexGameOutputBaseSchema
     childId: idSchema,
     ageGroup: z.enum(AGE_GROUPS),
     difficultyLevel: difficultyLevelSchema,
+    generationSource: z.enum(GENERATION_SOURCES),
     runtimeUrl: z.string().url(),
     launchMode: z.literal("embed"),
     createdAt: z.string().datetime()
@@ -351,9 +354,17 @@ function normalizeCodexOutput(input: unknown): unknown {
           }
 
           const normalized = { ...(round as Record<string, unknown>) };
+          if (
+            !normalized.correctChoice &&
+            Array.isArray(normalized.correctChoices) &&
+            normalized.correctChoices.length > 0
+          ) {
+            normalized.correctChoice = normalized.correctChoices[0];
+          }
           if (normalized.correctChoice === "" || normalized.correctChoice === null) {
             delete normalized.correctChoice;
           }
+          delete normalized.correctChoices;
           if (
             normalized.sequence === null ||
             (Array.isArray(normalized.sequence) && normalized.sequence.length === 0)

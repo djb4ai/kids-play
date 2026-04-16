@@ -37,6 +37,10 @@ function isDifficultyLevel(value: unknown) {
   return value === 1 || value === 2 || value === 3;
 }
 
+function isGenerationSource(value: unknown) {
+  return value === "mock" || value === "codex_app_server";
+}
+
 function isGameItem(value: unknown): value is GameItem {
   return (
     isRecord(value) &&
@@ -94,6 +98,7 @@ export function isGameSession(value: unknown): value is GameSession {
     isString(value.childId) &&
     value.ageGroup === "5-8" &&
     isDifficultyLevel(value.difficultyLevel) &&
+    isGenerationSource(value.generationSource) &&
     isString(value.runtimeUrl) &&
     value.launchMode === "embed" &&
     isString(value.createdAt)

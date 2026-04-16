@@ -30,6 +30,7 @@ function createSession(skill: Skill, gameId = `game_${skill}_test`): GameSession
     childId: DEMO_CHILD_ID,
     ageGroup: "5-8",
     difficultyLevel: 1,
+    generationSource: "mock",
     runtimeUrl: `http://127.0.0.1:3001/game/${gameId}`,
     launchMode: "embed",
     createdAt: "2026-04-16T06:30:00.000Z"

@@ -223,6 +223,39 @@ export const TEMPLATE_CATALOG: Record<TemplateType, TemplateDefinition> = {
         correctChoice: "sun"
       }
     ]
+  },
+  attention_codex_surprise: {
+    templateType: "attention_codex_surprise",
+    skill: "attention",
+    title: "Moonlight Lookout",
+    instructions: "Read the clue badge, then tap the matching helper.",
+    description: "Flexible attention play with short clue badges and fresh focus prompts.",
+    items: [
+      { id: "night_moon", label: "Moon", imageKey: "moon", value: "night" },
+      { id: "spark_star", label: "Star", imageKey: "star", value: "spark" },
+      { id: "day_sun", label: "Sun", imageKey: "sun", value: "day" },
+      { id: "soft_leaf", label: "Leaf", imageKey: "leaf", value: "soft" }
+    ],
+    rounds: [
+      {
+        id: "lookout_night",
+        prompt: "Tap the helper with the night badge.",
+        choices: ["night_moon", "day_sun", "spark_star"],
+        correctChoice: "night_moon"
+      },
+      {
+        id: "lookout_soft",
+        prompt: "Tap the helper with the soft badge.",
+        choices: ["spark_star", "soft_leaf", "day_sun"],
+        correctChoice: "soft_leaf"
+      },
+      {
+        id: "lookout_spark",
+        prompt: "Tap the helper with the spark badge.",
+        choices: ["spark_star", "night_moon"],
+        correctChoice: "spark_star"
+      }
+    ]
   }
 };
 

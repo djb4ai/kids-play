@@ -1,6 +1,7 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import readline from "node:readline";
 import {
+  IMAGE_KEYS,
   codexOutputJsonSchema,
   type AdaptiveGenerationContext,
   type GenerateGameRequest
@@ -299,6 +300,18 @@ function buildPrompt(
   context: AdaptiveGenerationContext,
   templateCatalog: unknown
 ) {
+  if (input.skill === "attention") {
+    return buildCreativeAttentionPrompt(input, context);
+  }
+
+  return buildTemplatePrompt(input, context, templateCatalog);
+}
+
+function buildTemplatePrompt(
+  input: GenerateGameRequest,
+  context: AdaptiveGenerationContext,
+  templateCatalog: unknown
+) {
   return [
     "Generate one short child-safe adaptive game config for this request.",
     "",
@@ -315,7 +328,43 @@ function buildPrompt(
     "- Use the adaptive context to repeat weak items, reduce distractors, or gently raise difficulty.",
     "- Keep changes small and encouraging. Do not make the child feel punished.",
     "- Feedback must be short, affirmative, and non-punitive.",
-    "- Include every schema field. Use an empty string for item.value or round.correctChoice when it does not apply.",
+    "- Include every schema field. Use an empty string for item.value when it does not apply.",
+    "- Use null for round.correctChoice when it does not apply.",
+    "- Use null or an empty array for round.correctChoices, round.sequence, and round.correctSequence when they do not apply.",
+    "- Do not include gameId, runtimeUrl, launchMode, ports, localhost links, or technical details."
+  ].join("\n");
+}
+
+function buildCreativeAttentionPrompt(
+  input: GenerateGameRequest,
+  context: AdaptiveGenerationContext
+) {
+  return [
+    "Generate one short child-safe adaptive attention game config for this request.",
+    "",
+    `Request: ${JSON.stringify(input)}`,
+    `Adaptive context: ${JSON.stringify(context)}`,
+    `Available image keys: ${JSON.stringify(IMAGE_KEYS)}`,
+    "",
+    "Rules:",
+    "- Return JSON only, with no markdown.",
+    '- Use templateType \"attention_codex_surprise\".',
+    "- Invent a fresh attention mini-game concept instead of reusing the catalog templates.",
+    "- Make it feel different through a new title, instructions, item ids, round ids, prompt wording, and a playful theme.",
+    "- Keep ids lowercase snake_case and 2 to 32 characters.",
+    "- Keep labels at 24 characters or fewer and badge values at 18 characters or fewer.",
+    "- Keep the title at 42 characters or fewer.",
+    "- Keep the instructions at 96 characters or fewer.",
+    "- Keep each round prompt at 90 characters or fewer.",
+    "- Keep the game compatible with the current tap-to-pick interface: every round must use choices and correctChoice.",
+    "- Do not use sequence or correctSequence for this attention game. Use empty arrays for both fields.",
+    "- Use only the listed image keys for item.imageKey, but you may invent new item ids, labels, and short badge values.",
+    "- Use item.value as a short badge clue when it helps create a fresh theme.",
+    "- Keep the session to 3 short rounds.",
+    "- Use the adaptive context to repeat weak targets, lower distractors, or add one gentle twist when the learner is ready for more.",
+    "- Keep the challenge encouraging and fun. Do not make the child feel punished.",
+    "- Feedback must be short, affirmative, and non-punitive.",
+    "- Include every schema field. Use an empty string for item.value only when it does not apply.",
     "- Use an empty array for round.sequence and round.correctSequence when they do not apply.",
     "- Do not include gameId, runtimeUrl, launchMode, ports, localhost links, or technical details."
   ].join("\n");

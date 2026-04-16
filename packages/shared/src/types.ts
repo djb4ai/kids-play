@@ -6,6 +6,10 @@ export const DIFFICULTIES = ["beginner"] as const;
 
 export type Difficulty = (typeof DIFFICULTIES)[number];
 
+export const GENERATION_SOURCES = ["mock", "codex_app_server"] as const;
+
+export type GameGenerationSource = (typeof GENERATION_SOURCES)[number];
+
 export const DIFFICULTY_LEVELS = [1, 2, 3] as const;
 
 export type DifficultyLevel = (typeof DIFFICULTY_LEVELS)[number];
@@ -20,7 +24,8 @@ export const TEMPLATE_TYPES = [
   "memory_sequence",
   "memory_shape_path",
   "attention_target_tap",
-  "attention_shape_scan"
+  "attention_shape_scan",
+  "attention_codex_surprise"
 ] as const;
 
 export type TemplateType = (typeof TEMPLATE_TYPES)[number];
@@ -86,6 +91,7 @@ export type GameSession = CodexGameOutput & {
   childId: string;
   ageGroup: AgeGroup;
   difficultyLevel: DifficultyLevel;
+  generationSource: GameGenerationSource;
   runtimeUrl: string;
   launchMode: "embed";
   createdAt: string;

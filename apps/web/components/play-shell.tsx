@@ -8,6 +8,7 @@ import type { GameplayEvent } from "@kids-play/shared";
 
 type GameSessionSummary = {
   childId?: string;
+  generationSource?: "mock" | "codex_app_server";
   title?: string;
   instructions?: string;
 };
@@ -20,6 +21,18 @@ type RuntimeEvent =
   | { type: "kids-play:go-home"; gameId: string };
 
 const DEFAULT_ORIGIN = "http://127.0.0.1:3001";
+
+function getGenerationLabel(source?: GameSessionSummary["generationSource"]) {
+  if (source === "codex_app_server") {
+    return "Generated with Codex app-server";
+  }
+
+  if (source === "mock") {
+    return "Built from the local practice set";
+  }
+
+  return null;
+}
 
 export function PlayShell({
   gameId,
@@ -43,6 +56,7 @@ export function PlayShell({
   const eventsRef = useRef<GameplayEvent[]>([]);
   const sessionStartedAtRef = useRef<string | null>(null);
   const saveStartedRef = useRef(false);
+  const generationLabel = getGenerationLabel(session.generationSource);
 
   useEffect(() => {
     let active = true;
@@ -188,6 +202,7 @@ export function PlayShell({
           <div className="statusPill">
             {gameStarted ? "Game started" : runtimeLoaded ? "Ready to play" : "Loading game"}
           </div>
+          {generationLabel ? <div className="statusPill info">{generationLabel}</div> : null}
           {loadFailed ? <div className="statusPill error">Something slowed down</div> : null}
         </section>
 

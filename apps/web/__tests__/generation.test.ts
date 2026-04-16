@@ -28,6 +28,52 @@ function clientReturning(output: unknown): GameGenerationClient {
   };
 }
 
+function createCreativeAttentionOutput() {
+  return {
+    skill: "attention" as const,
+    templateType: "attention_codex_surprise" as const,
+    title: "Moonlight Lookout",
+    instructions: "Read the clue badge, then tap the matching helper.",
+    items: [
+      { id: "night_moon", label: "Moon", imageKey: "moon" as const, value: "night" },
+      { id: "spark_star", label: "Star", imageKey: "star" as const, value: "spark" },
+      { id: "day_sun", label: "Sun", imageKey: "sun" as const, value: "day" },
+      { id: "soft_leaf", label: "Leaf", imageKey: "leaf" as const, value: "soft" }
+    ],
+    rounds: [
+      {
+        id: "lookout_night",
+        prompt: "Tap the helper with the night badge.",
+        choices: ["night_moon", "day_sun", "spark_star"],
+        correctChoice: "night_moon",
+        sequence: [],
+        correctSequence: []
+      },
+      {
+        id: "lookout_soft",
+        prompt: "Tap the helper with the soft badge.",
+        choices: ["spark_star", "soft_leaf", "day_sun"],
+        correctChoice: "soft_leaf",
+        sequence: [],
+        correctSequence: []
+      },
+      {
+        id: "lookout_spark",
+        prompt: "Tap the helper with the spark badge.",
+        choices: ["spark_star", "night_moon"],
+        correctChoice: "spark_star",
+        sequence: [],
+        correctSequence: []
+      }
+    ],
+    feedback: {
+      correct: ["Nice spotting!"],
+      tryAgain: ["Keep looking!"],
+      complete: ["You stayed focused!"]
+    }
+  };
+}
+
 describe("createGeneratedGameSession", () => {
   it("lets selected skills use live Codex while mock mode stays on", () => {
     const env = {
@@ -68,6 +114,7 @@ describe("createGeneratedGameSession", () => {
     async (skill) => {
       const session = await createGeneratedGameSession(request(skill), {
         client: clientReturning(createMockCodexOutput(skill)),
+        generationSource: "mock",
         now: fixedNow,
         runtimeOrigin: "http://127.0.0.1:3001"
       });
@@ -80,9 +127,27 @@ describe("createGeneratedGameSession", () => {
         `http://127.0.0.1:3001/game/${session.gameId}`
       );
       expect(session.launchMode).toBe("embed");
+      expect(session.generationSource).toBe("mock");
       expect(session.createdAt).toBe("2026-04-16T06:30:00.000Z");
     }
   );
+
+  it("accepts freeform live attention configs that do not use catalog templates", async () => {
+    const session = await createGeneratedGameSession(request("attention"), {
+      client: clientReturning(createCreativeAttentionOutput()),
+      generationSource: "codex_app_server",
+      now: fixedNow,
+      runtimeOrigin: "http://127.0.0.1:3001"
+    });
+
+    expect(session.generationSource).toBe("codex_app_server");
+    expect(session.templateType).toBe("attention_codex_surprise");
+    expect(session.title).toBe("Moonlight Lookout");
+    expect(session.rounds[0]?.correctChoice).toBe("night_moon");
+    expect(session.items.map((item) => item.id)).toEqual(
+      expect.arrayContaining(["night_moon", "spark_star", "day_sun", "soft_leaf"])
+    );
+  });
 
   it("rejects invalid skill input", async () => {
     await expect(

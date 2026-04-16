@@ -41,6 +41,7 @@ export async function POST(request: Request) {
     return NextResponse.json(toLaunchMetadata(session), { status: 201 });
   } catch (error) {
     if (error instanceof ZodError) {
+      console.error("[kids-play] generation validation failed", error.flatten());
       return NextResponse.json(
         {
           error: "Choose Reading, Memory, or Attention to start.",

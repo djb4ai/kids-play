@@ -44,6 +44,11 @@ const TEMPLATE_COPY: Record<
     heading: "Focus Time",
     subtitle: "Find the named shape and tap it.",
     label: "Focus"
+  },
+  attention_codex_surprise: {
+    heading: "Focus Time",
+    subtitle: "A fresh focus game is ready. Spot the clue and tap the match.",
+    label: "Focus"
   }
 };
 
@@ -492,8 +497,18 @@ function MemorySequence({
 
 function GameStage({ session }: { session: GameSession }) {
   const copy = TEMPLATE_COPY[session.templateType];
-  const { round, complete, phase, score, total, statusMessage, lockedChoice, memoryRevealCount, sequenceCursor, choose } =
-    useRoundFlow(session);
+  const {
+    round,
+    complete,
+    phase,
+    score,
+    total,
+    statusMessage,
+    lockedChoice,
+    memoryRevealCount,
+    sequenceCursor,
+    choose
+  } = useRoundFlow(session);
 
   return (
     <main className="shell" data-testid="game-runtime">
