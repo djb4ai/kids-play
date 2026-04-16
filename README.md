@@ -1,4 +1,4 @@
-# Kids Play Phase 2
+# Kids Play
 
 A child-friendly practice loop for Reading, Memory, and Attention.
 
